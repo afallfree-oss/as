@@ -278,13 +278,9 @@ if __name__ == "__main__":
 
     keyword = "노트북"
     posts_made = 0
-    max_posts = 10
+    max_posts = 1
 
     while posts_made < max_posts:
-        if posts_made > 0:
-            logging.info("다음 게시글 작성을 위해 3분 동안 대기합니다...")
-            time.sleep(180)
-
         logging.info(f"[{posts_made + 1}/{max_posts}] 새로운 상품 정보를 가져오는 중...")
         products = get_products_by_search(keyword=keyword, limit=10)
 
