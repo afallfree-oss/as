@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import requests
 import hmac
 import hashlib
@@ -15,16 +13,11 @@ from typing import List, Dict, Any
 # ====================================================================================
 # [설정] 아래에 입력된 API 키와 ID를 확인하세요.
 # ====================================================================================
-
 # 쿠팡 파트너스 API 인증 정보
-# NOTE: 개인정보 보호를 위해 실제 키는 삭제하고, 빈 문자열로 대체했습니다.
-# 새 키를 발급받아 아래에 입력해 주세요.
 COUPANG_ACCESS_KEY = "d9ba9b35-1be8-46a3-b5eb-ef1add119ac8"
 COUPANG_SECRET_KEY = "0912f82b517c3b406e89f66829449181d61d39ad"
 
 # 구글 Gemini API 키
-# NOTE: 개인정보 보호를 위해 실제 키는 삭제하고, 빈 문자열로 대체했습니다.
-# 새 키를 발급받아 아래에 입력해 주세요.
 GEMINI_API_KEY = "AIzaSyDWKHjLNjupbX-Lb0X5KqaN8OTljwsOT7E"
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={GEMINI_API_KEY}"
 
@@ -32,10 +25,9 @@ GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemin
 POSTED_PRODUCTS_FILE = "posted_products.json"
 
 # GitHub 저장소 설정 (로컬 저장소 경로와 원격 URL을 입력하세요)
-# NOTE: 현재 저장소 URL은 임시 값으로 설정되었습니다.
-# 개인 저장소 URL로 변경해야 합니다.
+# [업데이트됨] Codespaces 환경에 맞게 로컬 경로를 동적으로 설정합니다.
 GITHUB_REPO_PATH = os.getcwd()
-GITHUB_REPO_URL = "https://github.com/your-username/your-repo.git"
+GITHUB_REPO_URL = "https://github.com/afallfree-oss/as.git"
 GITHUB_BRANCH = "main"
 
 # 로깅 설정
@@ -44,14 +36,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # ====================================================================================
 # 함수: 쿠팡 파트너스 API 연동
 # ====================================================================================
-
 def generate_hmac(method: str, url: str, secret_key: str, access_key: str, datetime_gmt: str, body: str = "") -> str:
-    """
-    쿠팡 파트너스 API를 위한 HMAC 서명을 생성합니다.
-    """
+    """ 쿠팡 파트너스 API를 위한 HMAC 서명을 생성합니다. """
     path, *query = url.split("?")
     message = datetime_gmt + method + path + (query[0] if query else "") + body
-
+    
     signature = hmac.new(
         bytes(secret_key, "utf-8"),
         message.encode("utf-8"),
@@ -61,22 +50,15 @@ def generate_hmac(method: str, url: str, secret_key: str, access_key: str, datet
     return f"CEA algorithm=HmacSHA256, access-key={access_key}, signed-date={datetime_gmt}, signature={signature}"
 
 def get_products_by_search(keyword: str, limit: int = 10) -> List[Dict[str, Any]]:
-    """
-    쿠팡 파트너스 검색 API를 통해 특정 키워드의 상품을 가져옵니다.
-    """
-    if not COUPANG_ACCESS_KEY or not COUPANG_SECRET_KEY:
-        logging.error("쿠팡 파트너스 API 키가 설정되지 않았습니다. Coupang API를 건너뜁니다.")
-        return []
-    
+    """ 쿠팡 파트너스 검색 API를 통해 특정 키워드의 상품을 가져옵니다. """
     request_method = "GET"
     DOMAIN = "https://api-gateway.coupang.com"
     api_uri = "/v2/providers/affiliate_open_api/apis/openapi/products/search"
-    
     query_params = {
         "keyword": keyword,
         "limit": limit
     }
-    
+
     datetime_gmt = time.strftime('%y%m%d', time.gmtime()) + 'T' + time.strftime('%H%M%S', time.gmtime()) + 'Z'
     full_url = f"{DOMAIN}{api_uri}"
     query_string = requests.Request(request_method, url=full_url, params=query_params).prepare().url.split('?', 1)[1]
@@ -123,25 +105,18 @@ def get_products_by_search(keyword: str, limit: int = 10) -> List[Dict[str, Any]
     except json.JSONDecodeError:
         logging.error("API 응답이 유효한 JSON 형식이 아닙니다.")
         return []
-
+        
 def generate_persuasive_article(product_name: str) -> str:
-    """
-    Gemini API를 호출하여 특정 상품에 대한 1500자 분량의 설득력 있는 블로그 글을 생성합니다.
-    """
-    if not GEMINI_API_KEY:
-        logging.error("Gemini API 키가 설정되지 않았습니다. Gemini API 호출을 건너뜁니다.")
-        return "상품 설명을 생성하는 데 실패했습니다. Gemini API 키를 확인해 주세요."
-
+    """ Gemini API를 호출하여 특정 상품에 대한 1500자 분량의 설득력 있는 블로그 글을 생성합니다. """
     prompt = (
         f"'{product_name}'에 대한 구매를 유도하는 블로그 글을 1500자 내외의 '해요체'로 작성해 주세요. "
         "글은 다음과 같은 순서로 진행해 주세요: "
-        "1. **시선을 끄는 서론:** 독자가 현재 겪고 있을 문제나 필요성을 공감하며, 이 상품이 어떻게 해결책이 될 수 있는지 호기심을 유발하는 문장으로 시작해 주세요. "
-        "2. **구체적인 본론:** 상품의 주요 기능, 디자인, 사용 시의 장점을 3-4개 상세 문단으로 나누어 설명해 주세요. 이 상품이 왜 특별하고 다른 상품들과 다른지 강조해 주세요. "
-        "3. **결론 및 구매 유도:** 이 상품을 구매했을 때 얻게 될 긍정적인 변화와 가치를 다시 한번 요약하고, 마지막으로 행동을 유도하는 강력한 문장으로 마무리해 주세요. "
-        "4. **핵심 요약:** 본론의 내용을 3가지 핵심 장점으로 요약하여 별도로 제공해 주세요. 이 요약은 나중에 강조하여 보여줄 것입니다. "
+        "1. 시선을 끄는 서론: 독자가 현재 겪고 있을 문제나 필요성을 공감하며, 이 상품이 어떻게 해결책이 될 수 있는지 호기심을 유발하는 문장으로 시작해 주세요. "
+        "2. 구체적인 본론: 상품의 주요 기능, 디자인, 사용 시의 장점을 3-4개 상세 문단으로 나누어 설명해 주세요. 이 상품이 왜 특별하고 다른 상품들과 다른지 강조해 주세요. "
+        "3. 결론 및 구매 유도: 이 상품을 구매했을 때 얻게 될 긍정적인 변화와 가치를 다시 한번 요약하고, 마지막으로 행동을 유도하는 강력한 문장으로 마무리해 주세요. "
+        "4. 핵심 요약: 본론의 내용을 3가지 핵심 장점으로 요약하여 별도로 제공해 주세요. 이 요약은 나중에 강조하여 보여줄 것입니다. "
         "최대한 감성적이고 설득력 있는 문체로 작성해 주시고, 서론, 본론, 결론, 핵심 요약과 같은 제목은 사용하지 말아주세요. "
     )
-
     payload = {
         "contents": [
             {
@@ -153,7 +128,7 @@ def generate_persuasive_article(product_name: str) -> str:
             }
         ]
     }
-
+    
     try:
         response = requests.post(GEMINI_API_URL, json=payload, timeout=60)
         response.raise_for_status()
@@ -162,18 +137,16 @@ def generate_persuasive_article(product_name: str) -> str:
         if not candidates:
             logging.warning(f"'{product_name}'에 대한 Gemini API 응답에서 후보를 찾을 수 없습니다.")
             return "상품 설명을 생성하는 데 실패했습니다. 잠시 후 다시 시도해 주세요."
-
+        
         generated_text = candidates[0].get('content', {}).get('parts', [{}])[0].get('text', '')
         return generated_text.strip()
     
     except requests.exceptions.RequestException as e:
         logging.error(f"Gemini API 요청 중 오류 발생: {e}")
         return "상품 설명을 생성하는 데 실패했습니다. 잠시 후 다시 시도해 주세요."
-
+        
 def generate_full_blog_content(product: Dict[str, str], article_content: str) -> str:
-    """
-    하나의 블로그 게시물을 구성하는 마크다운(Markdown)을 생성합니다.
-    """
+    """ 하나의 블로그 게시물을 구성하는 마크다운(Markdown)을 생성합니다. """
     if not product:
         return ""
 
@@ -209,44 +182,14 @@ date: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())}
 
 {summary_markdown}
 
-[**지금 바로 구매하고 새로운 경험을 시작하세요!**]({product_url})
-
----
-_이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다._
+지금 바로 구매하고 새로운 경험을 시작하세요!
+이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
 """
-    
     return markdown_content
 
-# ====================================================================================
-# 함수: Git을 사용해 GitHub에 포스팅
-# ====================================================================================
-
-def post_to_github(title: str, content: str):
-    """
-    새로운 마크다운 파일을 생성하고 Git을 사용해 GitHub에 푸시합니다.
-    """
-    if not os.path.exists(GITHUB_REPO_PATH):
-        logging.error(f"지정된 Git 저장소 경로가 없습니다: {GITHUB_REPO_PATH}")
-        return
-
-    os.chdir(GITHUB_REPO_PATH)
-    
-    # Jekyll 설정을 위해 _config.yml 파일이 없으면 생성
-    config_file_path = os.path.join(GITHUB_REPO_PATH, "_config.yml")
-    if not os.path.exists(config_file_path):
-        logging.info("Jekyll 설정 파일(_config.yml)이 없어 새로 생성합니다.")
-        with open(config_file_path, "w", encoding="utf-8") as f:
-            f.write("theme: jekyll-theme-minimal\n")
-            f.write("markdown: kramdown\n")
-            f.write("plugins:\n")
-            f.write("  - jekyll-feed\n")
-            f.write("  - jekyll-seo-tag\n")
-            
-    # GitHub Pages의 메인 페이지 역할을 할 index.md 파일 생성
-    index_file_path = os.path.join(GITHUB_REPO_PATH, "index.md")
-    if not os.path.exists(index_file_path):
-        logging.info("메인 페이지(index.md)가 없어 새로 생성합니다.")
-        index_content = """---
+def create_index_file(posts_list: List[Dict[str, Any]]):
+    """ 블로그 게시물 목록을 보여주는 index.md 파일을 생성합니다. """
+    index_content = """---
 layout: default
 title: '나만의 쿠팡 파트너스 블로그'
 ---
@@ -259,11 +202,26 @@ title: '나만의 쿠팡 파트너스 블로그'
     <a href="{{ site.baseurl }}{{ post.url }}">더 읽어보기</a>
   </div>
 {% endfor %}
-
 """
-        with open(index_file_path, "w", encoding="utf-8") as f:
-            f.write(index_content)
+    with open("index.md", "w", encoding="utf-8") as f:
+        f.write(index_content)
+    logging.info("메인 페이지(index.md)가 없어 새로 생성합니다.")
+        
+def post_to_github(title: str, content: str):
+    """ 새로운 마크다운 파일을 생성하고 Git을 사용해 GitHub에 푸시합니다. """
+    if not os.path.exists(GITHUB_REPO_PATH):
+        logging.error(f"지정된 Git 저장소 경로가 없습니다: {GITHUB_REPO_PATH}")
+        return
 
+    os.chdir(GITHUB_REPO_PATH)
+    
+    try:
+        logging.info("Git 변경사항을 커밋하기 전에 최신 내용을 가져오는 중...")
+        subprocess.run(["git", "pull", "origin", "main"], check=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Git 명령 실행 중 오류 발생: {e}")
+        logging.error("깃허브 계정에 SSH 키가 등록되어 있거나, 토큰 권한 설정이 올바른지 확인해주세요.")
+        return
 
     # 마크다운 파일 이름 생성
     slug = title.replace('[광고]', '').replace('인생 아이템!', '').replace('을(를) 만나보세요.', '').strip().replace(' ', '-').replace('/', '-')
@@ -274,10 +232,11 @@ title: '나만의 쿠팡 파트너스 블로그'
     with open(file_name, "w", encoding="utf-8") as f:
         f.write(content)
 
-    try:
-        logging.info("Git 변경사항을 커밋하기 전에 최신 내용을 가져오는 중...")
-        subprocess.run(["git", "pull", "origin", GITHUB_BRANCH], check=True)
+    # index.md 파일이 없으면 새로 생성
+    if not os.path.exists("index.md"):
+        create_index_file([])
 
+    try:
         logging.info("Git 변경사항을 커밋하고 푸시하는 중...")
         subprocess.run(["git", "add", "."], check=True)
         commit_message = f"Add new post: {title}"
@@ -295,11 +254,8 @@ title: '나만의 쿠팡 파트너스 블로그'
 # ====================================================================================
 # 함수: 게시된 상품 기록 관리
 # ====================================================================================
-
 def load_posted_products() -> List[str]:
-    """
-    게시된 상품 목록을 파일에서 불러옵니다.
-    """
+    """ 게시된 상품 목록을 파일에서 불러옵니다. """
     if os.path.exists(POSTED_PRODUCTS_FILE):
         with open(POSTED_PRODUCTS_FILE, 'r', encoding='utf-8') as f:
             try:
@@ -310,30 +266,32 @@ def load_posted_products() -> List[str]:
     return []
 
 def save_posted_products(products: List[str]):
-    """
-    게시된 상품 목록을 파일에 저장합니다.
-    """
+    """ 게시된 상품 목록을 파일에 저장합니다. """
     with open(POSTED_PRODUCTS_FILE, 'w', encoding='utf-8') as f:
         json.dump(products, f, ensure_ascii=False, indent=4)
-
+        
 # ====================================================================================
 # 메인 함수: 전체 프로세스 실행
 # ====================================================================================
-
 if __name__ == "__main__":
     logging.info("🚀 쿠팡 파트너스 자동 블로그 포스팅 시스템 (GitHub Pages)을 시작합니다...")
-
+    
+    # 1. 이전 게시 기록 로드
     posted_products = load_posted_products()
     logging.info(f"이전에 게시된 상품 수: {len(posted_products)}개")
 
-    keyword = "노트북"
+    keyword = "ai노트북"
     posts_made = 0
-    max_posts = 1
-
+    max_posts = 10
+    
     while posts_made < max_posts:
+        if posts_made > 0:
+            logging.info("다음 게시글 작성을 위해 3분 동안 대기합니다...")
+            time.sleep(180)
+            
         logging.info(f"[{posts_made + 1}/{max_posts}] 새로운 상품 정보를 가져오는 중...")
         products = get_products_by_search(keyword=keyword, limit=10)
-
+        
         selected_product = None
         for p in products:
             product_name = p.get('name')
@@ -341,7 +299,7 @@ if __name__ == "__main__":
                 logging.info(f"✅ 새로운 상품 '{product_name}'을(를) 찾았습니다.")
                 selected_product = p
                 break
-            
+                
         if not selected_product:
             logging.error("새로운 상품을 찾지 못했습니다. 스크립트를 종료합니다.")
             break
