@@ -246,20 +246,23 @@ def post_to_github(title: str, content: str):
     index_file_path = os.path.join(GITHUB_REPO_PATH, "index.md")
     if not os.path.exists(index_file_path):
         logging.info("메인 페이지(index.md)가 없어 새로 생성합니다.")
+        index_content = """---
+layout: default
+title: '나만의 쿠팡 파트너스 블로그'
+---
+## 최신 상품 리뷰
+
+{% for post in site.posts %}
+  <div class="post-item">
+    <h3><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></h3>
+    <p>{{ post.excerpt | strip_html | strip_newlines | truncate: 200 }}</p>
+    <a href="{{ site.baseurl }}{{ post.url }}">더 읽어보기</a>
+  </div>
+{% endfor %}
+
+"""
         with open(index_file_path, "w", encoding="utf-8") as f:
-            f.write("---\n")
-            f.write("layout: default\n")
-            f.write("title: '나만의 쿠팡 파트너스 블로그'\n")
-            f.write("---\n\n")
-            f.write("## 최신 상품 리뷰\n\n")
-            f.write("최신 쿠팡 파트너스 상품들을 자동으로 포스팅합니다. 새로운 글을 확인해 보세요!")
-
-
-    # .nojekyll 파일이 없으면 생성
-    nojekyll_file_path = os.path.join(GITHUB_REPO_PATH, ".nojekyll")
-    if not os.path.exists(nojekyll_file_path):
-        logging.info("사이트 발행을 위해 .nojekyll 파일을 생성합니다.")
-        open(nojekyll_file_path, 'a').close()
+            f.write(index_content)
 
 
     # 마크다운 파일 이름 생성
