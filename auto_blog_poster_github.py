@@ -178,7 +178,8 @@ def generate_full_blog_content(product: Dict[str, str], article_content: str) ->
 title: "[광고] 인생 아이템! '{name}'을(를) 만나보세요."
 date: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())}
 ---
-![{name} 이미지]({image_url})
+### 상품 이미지
+[![{name} 이미지]({image_url})]({product_url})
 
 {main_article}
 
@@ -186,18 +187,11 @@ date: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())}
 
 <br>
 
-<div style="text-align:center;">
-    <a href="{product_url}" target="_blank">
-        <img src="{image_url}" alt="{name}" style="max-width:100%;height:auto;border-radius:10px;box-shadow:0 4px 8px rgba(0,0,0,0.2);">
-    </a>
-</div>
-
-<br>
-
-<div style="text-align:center;">
-    <a href="{product_url}" target="_blank" style="display:inline-block;padding:15px 30px;font-size:1.2em;font-weight:bold;color:#fff;background-color:#FF5722;border-radius:50px;text-decoration:none;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-        지금 바로 구매하기
-    </a>
+<div align="center">
+  <p>이 상품이 궁금하시다면 아래 버튼을 눌러 확인해 보세요!</p>
+  <a href="{product_url}" target="_blank">
+    <img src="https://img.shields.io/badge/지금 바로 구매하기-FF5722?style=for-the-badge&logo=coupa&logoColor=white" alt="구매하기 버튼">
+  </a>
 </div>
 
 이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
