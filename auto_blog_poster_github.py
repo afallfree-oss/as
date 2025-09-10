@@ -10,6 +10,7 @@ import logging
 import os
 import uuid
 import subprocess
+import random  # <-- random 모듈을 추가했습니다.
 from typing import List, Dict, Any, Tuple
 
 # ====================================================================================
@@ -164,6 +165,7 @@ def generate_full_blog_content(product: Dict[str, str], article_content: str) ->
     product_url = product.get('url', '#')
     
     try:
+        # '핵심 요약' 부분을 분리하여 처리
         summary_start_index = article_content.rfind('핵심 요약')
         if summary_start_index != -1:
             main_article = article_content[:summary_start_index].strip()
@@ -181,14 +183,23 @@ def generate_full_blog_content(product: Dict[str, str], article_content: str) ->
         main_article = article_content
         summary_markdown = ""
 
+    # 본문 내용을 문단별로 나누고 블록인용구로 포맷팅
+    paragraphs = main_article.split('\n\n')
+    formatted_main_article = '\n\n'.join([f"> {p.strip()}" for p in paragraphs if p.strip()])
+
     markdown_content = f"""---
 title: "[광고] 인생 아이템! '{name}'을(를) 만나보세요."
 date: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())}
 ---
-### 상품 이미지
-[![{name} 이미지]({image_url})]({product_url})
 
-{main_article}
+<div align="center">
+    <a href="{product_url}" target="_blank">
+        <img src="{image_url}" alt="{name} 이미지" width="600" style="max-width: 100%; height: auto; border-radius: 12px; border: 1px solid #e0e0e0; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    </a>
+</div>
+<br>
+
+{formatted_main_article}
 
 {summary_markdown}
 
@@ -314,11 +325,11 @@ if __name__ == "__main__":
     }
     
     category_ids = list(categories.keys())
-    category_index = 0
     
     while True:
         try:
-            current_category_id = category_ids[category_index % len(category_ids)]
+            # 기존 순차적 선택 방식 대신, 무작위로 카테고리를 선택합니다.
+            current_category_id = random.choice(category_ids)
             current_category_name = categories[current_category_id]
             logging.info(f"\n💡 현재 '{current_category_name}' 카테고리로 새로운 상품을 검색합니다...")
 
@@ -351,8 +362,6 @@ if __name__ == "__main__":
                     post_to_github(f"[광고] 인생 아이템! '{selected_product.get('name')}'을(를) 만나보세요.", blog_post_markdown)
                 else:
                     logging.error("블로그 글 내용 생성에 실패했습니다. 다음 주기로 넘어갑니다.")
-
-            category_index += 1
             
             # 다음 포스팅까지 2분 대기
             logging.info("⏱️ 다음 포스팅을 위해 2분(120초) 대기 중...")
