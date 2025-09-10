@@ -217,6 +217,37 @@ def post_to_github(title: str, content: str):
         return
 
     os.chdir(GITHUB_REPO_PATH)
+    
+    # Jekyll 설정을 위해 _config.yml 파일이 없으면 생성
+    config_file_path = os.path.join(GITHUB_REPO_PATH, "_config.yml")
+    if not os.path.exists(config_file_path):
+        logging.info("Jekyll 설정 파일(_config.yml)이 없어 새로 생성합니다.")
+        with open(config_file_path, "w", encoding="utf-8") as f:
+            f.write("theme: jekyll-theme-minimal\n")
+            f.write("markdown: kramdown\n")
+            f.write("plugins:\n")
+            f.write("  - jekyll-feed\n")
+            f.write("  - jekyll-seo-tag\n")
+            
+    # GitHub Pages의 메인 페이지 역할을 할 index.md 파일 생성
+    index_file_path = os.path.join(GITHUB_REPO_PATH, "index.md")
+    if not os.path.exists(index_file_path):
+        logging.info("메인 페이지(index.md)가 없어 새로 생성합니다.")
+        with open(index_file_path, "w", encoding="utf-8") as f:
+            f.write("---\n")
+            f.write("layout: default\n")
+            f.write("title: '나만의 쿠팡 파트너스 블로그'\n")
+            f.write("---\n\n")
+            f.write("## 최신 상품 리뷰\n\n")
+            f.write("최신 쿠팡 파트너스 상품들을 자동으로 포스팅합니다. 새로운 글을 확인해 보세요!")
+
+
+    # .nojekyll 파일이 없으면 생성
+    nojekyll_file_path = os.path.join(GITHUB_REPO_PATH, ".nojekyll")
+    if not os.path.exists(nojekyll_file_path):
+        logging.info("사이트 발행을 위해 .nojekyll 파일을 생성합니다.")
+        open(nojekyll_file_path, 'a').close()
+
 
     # 마크다운 파일 이름 생성
     slug = title.replace('[광고]', '').replace('인생 아이템!', '').replace('을(를) 만나보세요.', '').strip().replace(' ', '-').replace('/', '-')
