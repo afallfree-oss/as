@@ -280,7 +280,7 @@ if __name__ == "__main__":
     posted_products = load_posted_products()
     logging.info(f"이전에 게시된 상품 수: {len(posted_products)}개")
 
-    keyword = "최신ai노트북"
+    keyword = "과자"
     posts_made = 0
     max_posts = 10
     
