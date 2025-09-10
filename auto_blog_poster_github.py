@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import requests
 import hmac
 import hashlib
@@ -25,7 +27,7 @@ GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemin
 POSTED_PRODUCTS_FILE = "posted_products.json"
 
 # GitHub 저장소 설정 (로컬 저장소 경로와 원격 URL을 입력하세요)
-# [업데이트됨] Codespaces 환경에 맞게 로컬 경로를 동적으로 설정합니다.
+# Codespaces 환경에 맞게 로컬 경로를 동적으로 설정합니다.
 GITHUB_REPO_PATH = os.getcwd()
 GITHUB_REPO_URL = "https://github.com/afallfree-oss/as.git"
 GITHUB_BRANCH = "main"
@@ -208,7 +210,10 @@ title: '나만의 쿠팡 파트너스 블로그'
     logging.info("메인 페이지(index.md)가 없어 새로 생성합니다.")
         
 def post_to_github(title: str, content: str):
-    """ 새로운 마크다운 파일을 생성하고 Git을 사용해 GitHub에 푸시합니다. """
+    """
+    새로운 마크다운 파일을 생성하고 Git을 사용해 GitHub에 푸시합니다.
+    파일 이름 길이를 제한하여 오류를 방지합니다.
+    """
     if not os.path.exists(GITHUB_REPO_PATH):
         logging.error(f"지정된 Git 저장소 경로가 없습니다: {GITHUB_REPO_PATH}")
         return
@@ -224,8 +229,11 @@ def post_to_github(title: str, content: str):
         return
 
     # 마크다운 파일 이름 생성
-    slug = title.replace('[광고]', '').replace('인생 아이템!', '').replace('을(를) 만나보세요.', '').strip().replace(' ', '-').replace('/', '-')
-    file_name = f"_posts/{time.strftime('%Y-%m-%d', time.gmtime())}-{slug}.md"
+    # 파일명 길이 제한 및 충돌 방지를 위해 고유 ID 추가
+    slug = title.replace('[광고]', '').replace('인생 아이템!', '').replace('을(를) 만나보세요.', '').strip().replace(' ', '-').replace('/', '-').replace('(', '').replace(')', '').replace(',', '').replace('+', '-')
+    unique_id = uuid.uuid4().hex[:8] # 짧은 고유 ID 생성
+    slug_truncated = slug[:50] # 슬러그를 50자로 자르기
+    file_name = f"_posts/{time.strftime('%Y-%m-%d', time.gmtime())}-{slug_truncated}-{unique_id}.md"
     
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     
@@ -282,7 +290,7 @@ if __name__ == "__main__":
 
     keyword = "과자"
     posts_made = 0
-    max_posts = 10
+    max_posts = 1
     
     while posts_made < max_posts:
         logging.info(f"[{posts_made + 1}/{max_posts}] 새로운 상품 정보를 가져오는 중...")
