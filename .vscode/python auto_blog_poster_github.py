@@ -1,5 +1,3 @@
-# as
-as
 # -*- coding: utf-8 -*-
 
 import requests
@@ -19,20 +17,25 @@ from typing import List, Dict, Any
 # ====================================================================================
 
 # 쿠팡 파트너스 API 인증 정보
-COUPANG_ACCESS_KEY = "d9ba9b35-1be8-46a3-b5eb-ef1add119ac8"
-COUPANG_SECRET_KEY = "0912f82b517c3b406e89f66829449181d61d39ad"
+# NOTE: 개인정보 보호를 위해 실제 키는 삭제하고, 빈 문자열로 대체했습니다.
+# 새 키를 발급받아 아래에 입력해 주세요.
+COUPANG_ACCESS_KEY = ""
+COUPANG_SECRET_KEY = ""
 
 # 구글 Gemini API 키
-GEMINI_API_KEY = "AIzaSyDWKHjLNjupbX-Lb0X5KqaN8OTljwsOT7E"
+# NOTE: 개인정보 보호를 위해 실제 키는 삭제하고, 빈 문자열로 대체했습니다.
+# 새 키를 발급받아 아래에 입력해 주세요.
+GEMINI_API_KEY = ""
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={GEMINI_API_KEY}"
 
 # 상품 게시 기록 파일
 POSTED_PRODUCTS_FILE = "posted_products.json"
 
 # GitHub 저장소 설정 (로컬 저장소 경로와 원격 URL을 입력하세요)
-# [업데이트됨] Codespaces 환경에 맞게 로컬 경로를 동적으로 설정합니다.
+# NOTE: 현재 저장소 URL은 임시 값으로 설정되었습니다.
+# 개인 저장소 URL로 변경해야 합니다.
 GITHUB_REPO_PATH = os.getcwd()
-GITHUB_REPO_URL = "https://github.com/afallfree-oss/as.git"
+GITHUB_REPO_URL = "https://github.com/your-username/your-repo.git"
 GITHUB_BRANCH = "main"
 
 # 로깅 설정
@@ -61,6 +64,10 @@ def get_products_by_search(keyword: str, limit: int = 10) -> List[Dict[str, Any]
     """
     쿠팡 파트너스 검색 API를 통해 특정 키워드의 상품을 가져옵니다.
     """
+    if not COUPANG_ACCESS_KEY or not COUPANG_SECRET_KEY:
+        logging.error("쿠팡 파트너스 API 키가 설정되지 않았습니다. Coupang API를 건너뜁니다.")
+        return []
+    
     request_method = "GET"
     DOMAIN = "https://api-gateway.coupang.com"
     api_uri = "/v2/providers/affiliate_open_api/apis/openapi/products/search"
@@ -121,6 +128,10 @@ def generate_persuasive_article(product_name: str) -> str:
     """
     Gemini API를 호출하여 특정 상품에 대한 1500자 분량의 설득력 있는 블로그 글을 생성합니다.
     """
+    if not GEMINI_API_KEY:
+        logging.error("Gemini API 키가 설정되지 않았습니다. Gemini API 호출을 건너뜁니다.")
+        return "상품 설명을 생성하는 데 실패했습니다. Gemini API 키를 확인해 주세요."
+
     prompt = (
         f"'{product_name}'에 대한 구매를 유도하는 블로그 글을 1500자 내외의 '해요체'로 작성해 주세요. "
         "글은 다음과 같은 순서로 진행해 주세요: "
@@ -219,6 +230,37 @@ def post_to_github(title: str, content: str):
         return
 
     os.chdir(GITHUB_REPO_PATH)
+    
+    # Jekyll 설정을 위해 _config.yml 파일이 없으면 생성
+    config_file_path = os.path.join(GITHUB_REPO_PATH, "_config.yml")
+    if not os.path.exists(config_file_path):
+        logging.info("Jekyll 설정 파일(_config.yml)이 없어 새로 생성합니다.")
+        with open(config_file_path, "w", encoding="utf-8") as f:
+            f.write("theme: jekyll-theme-minimal\n")
+            f.write("markdown: kramdown\n")
+            f.write("plugins:\n")
+            f.write("  - jekyll-feed\n")
+            f.write("  - jekyll-seo-tag\n")
+            
+    # GitHub Pages의 메인 페이지 역할을 할 index.md 파일 생성
+    index_file_path = os.path.join(GITHUB_REPO_PATH, "index.md")
+    if not os.path.exists(index_file_path):
+        logging.info("메인 페이지(index.md)가 없어 새로 생성합니다.")
+        with open(index_file_path, "w", encoding="utf-8") as f:
+            f.write("---\n")
+            f.write("layout: default\n")
+            f.write("title: '나만의 쿠팡 파트너스 블로그'\n")
+            f.write("---\n\n")
+            f.write("## 최신 상품 리뷰\n\n")
+            f.write("최신 쿠팡 파트너스 상품들을 자동으로 포스팅합니다. 새로운 글을 확인해 보세요!")
+
+
+    # .nojekyll 파일이 없으면 생성
+    nojekyll_file_path = os.path.join(GITHUB_REPO_PATH, ".nojekyll")
+    if not os.path.exists(nojekyll_file_path):
+        logging.info("사이트 발행을 위해 .nojekyll 파일을 생성합니다.")
+        open(nojekyll_file_path, 'a').close()
+
 
     # 마크다운 파일 이름 생성
     slug = title.replace('[광고]', '').replace('인생 아이템!', '').replace('을(를) 만나보세요.', '').strip().replace(' ', '-').replace('/', '-')
@@ -230,6 +272,9 @@ def post_to_github(title: str, content: str):
         f.write(content)
 
     try:
+        logging.info("Git 변경사항을 커밋하기 전에 최신 내용을 가져오는 중...")
+        subprocess.run(["git", "pull", "origin", GITHUB_BRANCH], check=True)
+
         logging.info("Git 변경사항을 커밋하고 푸시하는 중...")
         subprocess.run(["git", "add", "."], check=True)
         commit_message = f"Add new post: {title}"
@@ -280,13 +325,9 @@ if __name__ == "__main__":
 
     keyword = "노트북"
     posts_made = 0
-    max_posts = 10
+    max_posts = 1
 
     while posts_made < max_posts:
-        if posts_made > 0:
-            logging.info("다음 게시글 작성을 위해 3분 동안 대기합니다...")
-            time.sleep(180)
-
         logging.info(f"[{posts_made + 1}/{max_posts}] 새로운 상품 정보를 가져오는 중...")
         products = get_products_by_search(keyword=keyword, limit=10)
 
