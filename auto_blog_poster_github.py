@@ -51,7 +51,7 @@ def generate_hmac(method: str, url: str, secret_key: str, access_key: str, datet
 
     return f"CEA algorithm=HmacSHA256, access-key={access_key}, signed-date={datetime_gmt}, signature={signature}"
 
-def get_products_by_search(keyword: str, limit: int = 10) -> List[Dict[str, Any]]:
+def get_products_by_search(keyword: str, limit: int = 10, max_price: int = 100000) -> List[Dict[str, Any]]:
     """ 쿠팡 파트너스 검색 API를 통해 특정 키워드의 상품을 가져옵니다. """
     request_method = "GET"
     DOMAIN = "https://api-gateway.coupang.com"
@@ -94,11 +94,15 @@ def get_products_by_search(keyword: str, limit: int = 10) -> List[Dict[str, Any]
         if products and isinstance(products, list):
             for p in products:
                 if isinstance(p, dict):
-                    product_list.append({
-                        "name": p.get("productName", ""),
-                        "image": p.get("productImage", ""),
-                        "url": p.get("productUrl", "")
-                    })
+                    # 가격 필터링 로직 추가
+                    price = p.get('productPrice', 0)
+                    if price <= max_price:
+                        product_list.append({
+                            "name": p.get("productName", ""),
+                            "image": p.get("productImage", ""),
+                            "url": p.get("productUrl", ""),
+                            "price": price
+                        })
         return product_list
     
     except requests.exceptions.RequestException as e:
@@ -306,7 +310,8 @@ if __name__ == "__main__":
             current_keyword = keywords[keyword_index % len(keywords)]
             logging.info(f"\n💡 현재 '{current_keyword}' 키워드로 새로운 상품을 검색합니다...")
 
-            products = get_products_by_search(keyword=current_keyword, limit=10)
+            # 10만 원 이하의 상품만 검색하도록 max_price 파라미터 추가
+            products = get_products_by_search(keyword=current_keyword, limit=10, max_price=100000)
             
             selected_product = None
             for p in products:
