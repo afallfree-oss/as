@@ -10,7 +10,7 @@ import logging
 import os
 import uuid
 import subprocess
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 # ====================================================================================
 # [설정] 아래에 입력된 API 키와 ID를 확인하세요.
@@ -51,13 +51,16 @@ def generate_hmac(method: str, url: str, secret_key: str, access_key: str, datet
 
     return f"CEA algorithm=HmacSHA256, access-key={access_key}, signed-date={datetime_gmt}, signature={signature}"
 
-def get_products_by_search(keyword: str, limit: int = 10, max_price: int = 100000) -> List[Dict[str, Any]]:
-    """ 쿠팡 파트너스 검색 API를 통해 특정 키워드의 상품을 가져옵니다. """
+def get_products_by_category(category_id: int, keyword: str, limit: int = 10, min_price: int = 50000, max_price: int = 1000000) -> List[Dict[str, Any]]:
+    """
+    쿠팡 파트너스 검색 API를 통해 특정 카테고리와 키워드로 상품을 가져와 가격대를 필터링합니다.
+    """
     request_method = "GET"
     DOMAIN = "https://api-gateway.coupang.com"
     api_uri = "/v2/providers/affiliate_open_api/apis/openapi/products/search"
     query_params = {
-        "keyword": keyword,
+        "categoryId": category_id,
+        "keyword": keyword,  # 키워드 추가
         "limit": limit
     }
 
@@ -96,7 +99,7 @@ def get_products_by_search(keyword: str, limit: int = 10, max_price: int = 10000
                 if isinstance(p, dict):
                     # 가격 필터링 로직 추가
                     price = p.get('productPrice', 0)
-                    if price <= max_price:
+                    if min_price <= price <= max_price:
                         product_list.append({
                             "name": p.get("productName", ""),
                             "image": p.get("productImage", ""),
@@ -301,17 +304,26 @@ if __name__ == "__main__":
     posted_products = load_posted_products()
     logging.info(f"이전에 게시된 상품 수: {len(posted_products)}개")
 
-    # 포스팅할 상품 키워드 목록
-    keywords = ["과자", "초콜릿", "젤리", "사탕", "견과류", "음료"]
-    keyword_index = 0
+    # 포스팅할 상품 카테고리 ID 및 이름 목록
+    categories = {
+        1001: "여성패션", 1002: "남성패션", 1010: "뷰티", 1011: "출산/유아동",
+        1012: "식품", 1013: "주방용품", 1014: "생활용품", 1015: "홈인테리어",
+        1016: "가전디지털", 1017: "스포츠/레저", 1018: "자동차용품", 1019: "도서/음반/DVD",
+        1020: "완구/취미", 1021: "문구/오피스", 1024: "헬스/건강식품", 1025: "국내여행",
+        1026: "해외여행", 1029: "반려동물용품", 1030: "유아동패션"
+    }
+    
+    category_ids = list(categories.keys())
+    category_index = 0
     
     while True:
         try:
-            current_keyword = keywords[keyword_index % len(keywords)]
-            logging.info(f"\n💡 현재 '{current_keyword}' 키워드로 새로운 상품을 검색합니다...")
+            current_category_id = category_ids[category_index % len(category_ids)]
+            current_category_name = categories[current_category_id]
+            logging.info(f"\n💡 현재 '{current_category_name}' 카테고리로 새로운 상품을 검색합니다...")
 
-            # 10만 원 이하의 상품만 검색하도록 max_price 파라미터 추가
-            products = get_products_by_search(keyword=current_keyword, limit=10, max_price=100000)
+            # 5만원 이상 100만원 이하의 상품만 검색
+            products = get_products_by_category(category_id=current_category_id, keyword=current_category_name, limit=10, min_price=50000, max_price=1000000)
             
             selected_product = None
             for p in products:
@@ -322,7 +334,7 @@ if __name__ == "__main__":
                     break
                     
             if not selected_product:
-                logging.warning(f"'{current_keyword}' 키워드로 새로운 상품을 찾지 못했습니다. 다음 키워드로 넘어갑니다.")
+                logging.warning(f"'{current_category_name}' 카테고리에서 새로운 상품을 찾지 못했습니다. 다음 카테고리로 넘어갑니다.")
             else:
                 posted_products.append(selected_product['name'])
                 save_posted_products(posted_products)
@@ -340,7 +352,7 @@ if __name__ == "__main__":
                 else:
                     logging.error("블로그 글 내용 생성에 실패했습니다. 다음 주기로 넘어갑니다.")
 
-            keyword_index += 1
+            category_index += 1
             
             # 다음 포스팅까지 2분 대기
             logging.info("⏱️ 다음 포스팅을 위해 2분(120초) 대기 중...")
