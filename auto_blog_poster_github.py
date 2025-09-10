@@ -297,42 +297,51 @@ if __name__ == "__main__":
     posted_products = load_posted_products()
     logging.info(f"이전에 게시된 상품 수: {len(posted_products)}개")
 
-    keyword = "과자"
-    posts_made = 0
-    max_posts = 1
+    # 포스팅할 상품 키워드 목록
+    keywords = ["과자", "초콜릿", "젤리", "사탕", "견과류", "음료"]
+    keyword_index = 0
     
-    while posts_made < max_posts:
-        logging.info(f"[{posts_made + 1}/{max_posts}] 새로운 상품 정보를 가져오는 중...")
-        products = get_products_by_search(keyword=keyword, limit=10)
-        
-        selected_product = None
-        for p in products:
-            product_name = p.get('name')
-            if product_name and product_name not in posted_products:
-                logging.info(f"✅ 새로운 상품 '{product_name}'을(를) 찾았습니다.")
-                selected_product = p
-                break
-                
-        if not selected_product:
-            logging.error("새로운 상품을 찾지 못했습니다. 스크립트를 종료합니다.")
-            break
-        
-        posted_products.append(selected_product['name'])
-        save_posted_products(posted_products)
+    while True:
+        try:
+            current_keyword = keywords[keyword_index % len(keywords)]
+            logging.info(f"\n💡 현재 '{current_keyword}' 키워드로 새로운 상품을 검색합니다...")
 
-        logging.info("2. Gemini AI를 통해 설득력 있는 블로그 글을 생성하는 중...")
-        article_content = generate_persuasive_article(selected_product.get('name'))
-        
-        if article_content:
-            logging.info("3. 마크다운 형식의 블로그 글을 생성하는 중...")
-            blog_post_markdown = generate_full_blog_content(selected_product, article_content)
-            logging.info("✅ 마크다운 생성 완료!")
+            products = get_products_by_search(keyword=current_keyword, limit=10)
             
-            logging.info("4. 깃허브에 글을 게시하는 중...")
-            post_to_github(f"[광고] 인생 아이템! '{selected_product.get('name')}'을(를) 만나보세요.", blog_post_markdown)
-            posts_made += 1
-            logging.info(f"✅ 현재까지 {posts_made}개의 게시글을 작성했습니다.")
-        else:
-            logging.error("블로그 글 내용 생성에 실패했습니다. 다음 주기로 넘어갑니다.")
+            selected_product = None
+            for p in products:
+                product_name = p.get('name')
+                if product_name and product_name not in posted_products:
+                    logging.info(f"✅ 새로운 상품 '{product_name}'을(를) 찾았습니다.")
+                    selected_product = p
+                    break
+                    
+            if not selected_product:
+                logging.warning(f"'{current_keyword}' 키워드로 새로운 상품을 찾지 못했습니다. 다음 키워드로 넘어갑니다.")
+            else:
+                posted_products.append(selected_product['name'])
+                save_posted_products(posted_products)
 
-    logging.info("\n✅ 모든 작업이 완료되었습니다.")
+                logging.info("2. Gemini AI를 통해 설득력 있는 블로그 글을 생성하는 중...")
+                article_content = generate_persuasive_article(selected_product.get('name'))
+                
+                if article_content:
+                    logging.info("3. 마크다운 형식의 블로그 글을 생성하는 중...")
+                    blog_post_markdown = generate_full_blog_content(selected_product, article_content)
+                    logging.info("✅ 마크다운 생성 완료!")
+                    
+                    logging.info("4. 깃허브에 글을 게시하는 중...")
+                    post_to_github(f"[광고] 인생 아이템! '{selected_product.get('name')}'을(를) 만나보세요.", blog_post_markdown)
+                else:
+                    logging.error("블로그 글 내용 생성에 실패했습니다. 다음 주기로 넘어갑니다.")
+
+            keyword_index += 1
+            
+            # 다음 포스팅까지 2분 대기
+            logging.info("⏱️ 다음 포스팅을 위해 2분(120초) 대기 중...")
+            time.sleep(120)
+
+        except Exception as e:
+            logging.error(f"전체 프로세스 실행 중 오류가 발생했습니다: {e}")
+            logging.info("오류가 발생했으나 프로세스는 계속 진행됩니다. 2분 후 다시 시도합니다.")
+            time.sleep(120)
