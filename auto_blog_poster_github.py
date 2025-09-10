@@ -184,7 +184,22 @@ date: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())}
 
 {summary_markdown}
 
-지금 바로 구매하고 새로운 경험을 시작하세요!
+<br>
+
+<div style="text-align:center;">
+    <a href="{product_url}" target="_blank">
+        <img src="{image_url}" alt="{name}" style="max-width:100%;height:auto;border-radius:10px;box-shadow:0 4px 8px rgba(0,0,0,0.2);">
+    </a>
+</div>
+
+<br>
+
+<div style="text-align:center;">
+    <a href="{product_url}" target="_blank" style="display:inline-block;padding:15px 30px;font-size:1.2em;font-weight:bold;color:#fff;background-color:#FF5722;border-radius:50px;text-decoration:none;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+        지금 바로 구매하기
+    </a>
+</div>
+
 이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
 """
     return markdown_content
