@@ -1,5 +1,3 @@
-# as
-as
 # -*- coding: utf-8 -*-
 
 import requests
