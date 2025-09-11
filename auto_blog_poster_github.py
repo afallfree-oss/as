@@ -363,11 +363,11 @@ if __name__ == "__main__":
                 else:
                     logging.error("블로그 글 내용 생성에 실패했습니다. 다음 주기로 넘어갑니다.")
             
-            # 다음 포스팅까지 30초 대기
-            logging.info("⏱️ 다음 포스팅을 위해 0.5분(30초) 대기 중...")
-            time.sleep(30)
+            # 다음 포스팅까지 10초 대기
+            logging.info("⏱️ 다음 포스팅을 위해 10초 대기 중...")
+            time.sleep(10)
 
         except Exception as e:
             logging.error(f"전체 프로세스 실행 중 오류가 발생했습니다: {e}")
-            logging.info("오류가 발생했으나 프로세스는 계속 진행됩니다. 0.5분 후 다시 시도합니다.")
-            time.sleep(30)
+            logging.info("오류가 발생했으나 프로세스는 계속 진행됩니다. 10초 후 다시 시도합니다.")
+            time.sleep(10)
