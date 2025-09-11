@@ -333,8 +333,8 @@ if __name__ == "__main__":
             current_category_name = categories[current_category_id]
             logging.info(f"\n💡 현재 '{current_category_name}' 카테고리로 새로운 상품을 검색합니다...")
 
-            # 5만원 이상 100만원 이하의 상품만 검색
-            products = get_products_by_category(category_id=current_category_id, keyword=current_category_name, limit=10, min_price=50000, max_price=1000000)
+            # 1만원 이상 100만원 이하의 상품만 검색
+            products = get_products_by_category(category_id=current_category_id, keyword=current_category_name, limit=10, min_price=10000, max_price=1000000)
             
             selected_product = None
             for p in products:
