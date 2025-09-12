@@ -10,7 +10,7 @@ import logging
 import os
 import uuid
 import subprocess
-import random  # <-- random 모듈을 추가했습니다.
+import random
 from typing import List, Dict, Any, Tuple
 
 # ====================================================================================
@@ -21,7 +21,7 @@ COUPANG_ACCESS_KEY = "d9ba9b35-1be8-46a3-b5eb-ef1add119ac8"
 COUPANG_SECRET_KEY = "0912f82b517c3b406e89f66829449181d61d39ad"
 
 # 구글 Gemini API 키
-GEMINI_API_KEY = "AIzaSyDWKHjLNjupbX-Lb0X5KqaN8OTljwsOT7E"
+GEMINI_API_KEY = "AIzaSyDWKHjLNJupbX-Lb0X5KqaN8OTljwsOT7E"
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={GEMINI_API_KEY}"
 
 # 상품 게시 기록 파일
@@ -119,13 +119,15 @@ def get_products_by_category(category_id: int, keyword: str, limit: int = 10, mi
 def generate_persuasive_article(product_name: str) -> str:
     """ Gemini API를 호출하여 특정 상품에 대한 1500자 분량의 설득력 있는 블로그 글을 생성합니다. """
     prompt = (
-        f"'{product_name}'에 대한 구매를 유도하는 블로그 글을 1500자 내외의 '해요체'로 작성해 주세요. "
+        f"'{product_name}'에 대한 정보성 블로그 글을 1500자 내외의 '해요체'로 작성해 주세요. "
+        "단, 글은 단순한 광고가 아니라 독자에게 실질적인 정보를 제공하는 전문가의 관점으로 작성해야 합니다. "
+        "실제 사용 후기처럼 경험과 객관적인 데이터를 포함하고, 감성적인 문구는 줄여주세요. "
         "글은 다음과 같은 순서로 진행해 주세요: "
-        "1. 시선을 끄는 서론: 독자가 현재 겪고 있을 문제나 필요성을 공감하며, 이 상품이 어떻게 해결책이 될 수 있는지 호기심을 유발하는 문장으로 시작해 주세요. "
-        "2. 구체적인 본론: 상품의 주요 기능, 디자인, 사용 시의 장점을 3-4개 상세 문단으로 나누어 설명해 주세요. 이 상품이 왜 특별하고 다른 상품들과 다른지 강조해 주세요. "
-        "3. 결론 및 구매 유도: 이 상품을 구매했을 때 얻게 될 긍정적인 변화와 가치를 다시 한번 요약하고, 마지막으로 행동을 유도하는 강력한 문장으로 마무리해 주세요. "
-        "4. 핵심 요약: 본론의 내용을 3가지 핵심 장점으로 요약하여 별도로 제공해 주세요. 이 요약은 나중에 강조하여 보여줄 것입니다. "
-        "최대한 감성적이고 설득력 있는 문체로 작성해 주시고, 서론, 본론, 결론, 핵심 요약과 같은 제목은 사용하지 말아주세요. "
+        "1. **서론:** 상품에 대한 솔직한 분석을 제공하겠다는 의도를 명확히 밝혀주세요. "
+        "2. **본론:** 상품의 특징과 장점을 3-4개 문단으로 나누어 상세하게 설명해주세요. 이 때, '제가 직접 사용해보니...'와 같은 표현을 사용하여 실제 경험을 강조하고, 무게(g), 소재(재질), 크기(cm) 등 구체적인 수치나 데이터를 포함시켜 신뢰성을 높여주세요. 다른 유사 제품과 비교하여 이 상품이 가진 차별점을 언급하면 더욱 좋습니다. "
+        "3. **결론:** 이 상품을 추천하는 이유를 요약하고, 어떤 사람에게 이 제품이 가장 적합할지 제안해 주세요. "
+        "4. **핵심 요약:** 본론의 내용을 3가지 핵심 장점으로 요약하여 별도로 제공해 주세요. "
+        "서론, 본론, 결론, 핵심 요약과 같은 제목은 사용하지 말아주세요. "
     )
     payload = {
         "contents": [
@@ -328,13 +330,11 @@ if __name__ == "__main__":
     
     while True:
         try:
-            # 기존 순차적 선택 방식 대신, 무작위로 카테고리를 선택합니다.
             current_category_id = random.choice(category_ids)
             current_category_name = categories[current_category_id]
             logging.info(f"\n💡 현재 '{current_category_name}' 카테고리로 새로운 상품을 검색합니다...")
 
-            # 1만원 이상 100만원 이하의 상품만 검색
-            products = get_products_by_category(category_id=current_category_id, keyword=current_category_name, limit=10, min_price=10000, max_price=1000000)
+            products = get_products_by_category(category_id=current_category_id, keyword=current_category_name, limit=10, min_price=50000, max_price=1000000)
             
             selected_product = None
             for p in products:
@@ -345,7 +345,8 @@ if __name__ == "__main__":
                     break
                     
             if not selected_product:
-                logging.warning(f"'{current_category_name}' 카테고리에서 새로운 상품을 찾지 못했습니다. 다음 카테고리로 넘어갑니다.")
+                logging.warning(f"'{current_category_name}' 카테고리에서 새로운 상품을 찾지 못했습니다. 다음 검색을 즉시 시작합니다.")
+                continue # 상품을 찾지 못하면 대기하지 않고 즉시 다음 반복으로 넘어갑니다.
             else:
                 posted_products.append(selected_product['name'])
                 save_posted_products(posted_products)
@@ -363,11 +364,11 @@ if __name__ == "__main__":
                 else:
                     logging.error("블로그 글 내용 생성에 실패했습니다. 다음 주기로 넘어갑니다.")
             
-            # 다음 포스팅까지 70초 대기
-            logging.info("⏱️ 다음 포스팅을 위해 70초 대기 중...")
-            time.sleep(70)
+            # 글을 성공적으로 게시한 후에만 대기
+            logging.info("⏱️ 다음 포스팅을 위해 1분(60초) 대기 중...")
+            time.sleep(60)
 
         except Exception as e:
             logging.error(f"전체 프로세스 실행 중 오류가 발생했습니다: {e}")
-            logging.info("오류가 발생했으나 프로세스는 계속 진행됩니다. 70초 후 다시 시도합니다.")
-            time.sleep(70)
+            logging.info("오류가 발생했으나 프로세스는 계속 진행됩니다. 1분 후 다시 시도합니다.")
+            time.sleep(60)
